@@ -1,5 +1,7 @@
 # Better Lookup
 
+Simple fork with no deps, transpile using ESNext target.
+
 **A better async DNS lookup function for Node.js that implements atomic**
 **cache operation.**
 

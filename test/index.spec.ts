@@ -1,21 +1,25 @@
 /* global describe, it */
-const { lookup, install } = require("..");
-const { promisify } = require("util");
-const dns = require("dns");
-const http = require("http");
-const https = require("https");
-const HttpsProxyAgent = require("https-proxy-agent");
-const assert = require("assert");
+import { lookup, install } from "../src";
+import { promises as dnsPromises } from "dns";
+import * as http from "http";
+// import * as https from "https";
+// import * as HttpsProxyAgent from "https-proxy-agent";
+import * as assert from "assert";
+// import { describe, it } from "mocha";
 
-const dnsLookup = promisify(dns.lookup);
-const hostname = "hyurl.com";
+const dnsLookup = dnsPromises.lookup;
+// github resolve with multiple Ips
+const hostname = "github.com";
+// const hostname = "ssh.cluster023.hosting.ovh.net";
 let hostnameIPv4 = "";
 
-async function dnsLookup6(hostname, ipv4) {
-    let ipv6;
+async function dnsLookup6(hostname: string, ipv4: string) {
+    let ipv6: string;
 
     try {
-        ipv6 = (await dnsLookup(hostname, { family: 6 })).address;
+        ipv6 = (await dnsLookup(hostname, {
+            family: 6
+        })).address;
     } catch (err) {
         if (/getaddrinfo/.test(String(err))) {
             // The getaddrinfo function on some system may not resolve IPv6
@@ -46,7 +50,9 @@ describe("lookup()", () => {
 
     it("should lookup the hostname for IPv4 and return a promise of a string", async () => {
         let addr = await lookup(hostname, 4);
-        let _addr = hostnameIPv4 = (await dnsLookup(hostname, { family: 4 })).address;
+        let _addr = hostnameIPv4 = (await dnsLookup(hostname, {
+            family: 4
+        })).address;
         assert.strictEqual(addr, _addr);
     });
 
@@ -57,13 +63,17 @@ describe("lookup()", () => {
         assert.strictEqual(addr, _addr);
 
         let addr2 = await lookup("localhost", 6);
-        let _addr2 = (await dnsLookup("localhost", { family: 6 })).address;
+        let _addr2 = (await dnsLookup("localhost", {
+            family: 6
+        })).address;
 
         (_addr2 === "::ffff:127.0.0.1") && (_addr2 = "::1");
         assert.strictEqual(addr2, _addr2);
 
         let addr3 = await lookup("::1", 6);
-        let _addr3 = (await dnsLookup("::1", { family: 6 })).address;
+        let _addr3 = (await dnsLookup("::1", {
+            family: 6
+        })).address;
 
         (_addr2 === "::ffff:127.0.0.1") && (_addr2 = "::1");
         assert.strictEqual(addr3, _addr3);
@@ -72,7 +82,10 @@ describe("lookup()", () => {
     it("should lookup a hostname and calls the callback function", async () => {
         let addr = await new Promise((resolve, reject) => {
             lookup(hostname, (err, address, family) => {
-                err ? reject(err) : resolve({ address, family });
+                err ? reject(err) : resolve({
+                    address,
+                    family
+                });
             });
         });
         let _addr = await dnsLookup(hostname);
@@ -82,17 +95,25 @@ describe("lookup()", () => {
     it("should lookup a hostname for IPv4 and calls the callback function", async () => {
         let addr = await new Promise((resolve, reject) => {
             lookup(hostname, 4, (err, address, family) => {
-                err ? reject(err) : resolve({ address, family });
+                err ? reject(err) : resolve({
+                    address,
+                    family
+                });
             });
         });
-        let _addr = await dnsLookup(hostname, { family: 4 });
+        let _addr = await dnsLookup(hostname, {
+            family: 4
+        });
         assert.deepStrictEqual(addr, _addr);
     });
 
     it("should lookup a hostname for IPv6 and calls the callback function", async () => {
         let addr = await new Promise((resolve, reject) => {
             lookup(hostname, 6, (err, address, family) => {
-                err ? reject(err) : resolve({ address, family });
+                err ? reject(err) : resolve({
+                    address,
+                    family
+                });
             });
         });
         let _addr = {
@@ -104,34 +125,63 @@ describe("lookup()", () => {
     });
 
     it("should lookup the hostname with 'family' option", async () => {
-        let addr0 = await lookup(hostname, { family: 0 });
-        let _addr0 = (await dnsLookup(hostname, { family: 0 })).address;
+        let addr0 = await lookup(hostname, {
+            family: 0
+        });
+        let _addr0 = (await dnsLookup(hostname, {
+            family: 0
+        })).address;
         assert.strictEqual(addr0, _addr0);
 
-        let addr4 = await lookup(hostname, { family: 4 });
-        let _addr4 = (await dnsLookup(hostname, { family: 4 })).address;
+        let addr4 = await lookup(hostname, {
+            family: 4
+        });
+        let _addr4 = (await dnsLookup(hostname, {
+            family: 4
+        })).address;
         assert.strictEqual(addr4, _addr4);
 
-        let addr6 = await lookup(hostname, { family: 6 });
+        let addr6 = await lookup(hostname, {
+            family: 6
+        });
         let _addr6 = await dnsLookup6(hostname, addr4);
 
         assert.strictEqual(addr6, _addr6);
     });
 
     it("should lookup the hostname with 'all' option", async () => {
-        let addr = await lookup(hostname, { all: true });
-        let _addr = await dnsLookup(hostname, { all: true });
+        let addr = await lookup(hostname, {
+            all: true
+        });
+        let _addr = await dnsLookup(hostname, {
+            all: true
+        });
         assert.deepStrictEqual(addr, _addr);
 
-        let addr0 = await lookup(hostname, { family: 0, all: true });
-        let _addr0 = await dnsLookup(hostname, { family: 0, all: true });
+        let addr0 = await lookup(hostname, {
+            family: 0,
+            all: true
+        });
+        let _addr0 = await dnsLookup(hostname, {
+            family: 0,
+            all: true
+        });
         assert.deepStrictEqual(addr0, _addr0);
 
-        let addr4 = await lookup(hostname, { family: 4, all: true });
-        let _addr4 = await dnsLookup(hostname, { family: 4, all: true });
+        let addr4 = await lookup(hostname, {
+            family: 4,
+            all: true
+        });
+        let _addr4 = await dnsLookup(hostname, {
+            family: 4,
+            all: true
+        });
         assert.deepStrictEqual(addr4, _addr4);
 
-        let addr6 = await lookup(hostname, { family: 6, all: true });
+        let addr6 = await lookup(hostname, {
+            family: 6,
+            all: true
+        });
         let _addr6 = [{
             address: await dnsLookup6(hostname, hostnameIPv4),
             family: 6
@@ -141,15 +191,22 @@ describe("lookup()", () => {
 
     it("should lookup the hostname with both options and callback", async () => {
         let addr = await new Promise((resolve, reject) => {
-            lookup(hostname, { all: true }, (err, address) => {
+            lookup(hostname, {
+                all: true
+            }, (err, address) => {
                 err ? reject(err) : resolve(address);
             });
         });
-        let _addr = await dnsLookup(hostname, { all: true });
+        let _addr = await dnsLookup(hostname, {
+            all: true
+        });
         assert.deepStrictEqual(addr, _addr);
 
         let addr6 = await new Promise((resolve, reject) => {
-            lookup(hostname, { family: 6, all: true }, (err, address) => {
+            lookup(hostname, {
+                family: 6,
+                all: true
+            }, (err, address) => {
                 err ? reject(err) : resolve(address);
             });
         });
@@ -176,16 +233,20 @@ describe("install()", () => {
         assert.strictEqual(msg, `Error: connect ECONNREFUSED ${addr}:9000`);
     });
 
-    it("should work with 'https-proxy-agent'", async () => {
-        var agent = install(HttpsProxyAgent({ hostname, port: 9000 }));
-        var addr = await lookup(hostname);
-        var req = https.get(`https://${hostname}:9001`, { agent });
-        var msg = await new Promise((resolve) => {
-            req.once("error", err => {
-                resolve(String(err));
-            });
-        });
-
-        assert.strictEqual(msg, `Error: connect ECONNREFUSED ${addr}:9000`);
-    });
+    // it("should work with 'https-proxy-agent'", async () => {
+    //     var agent = install(HttpsProxyAgent({
+    //         hostname,
+    //         port: 9000
+    //     }));
+    //     var addr = await lookup(hostname);
+    //     var req = https.get(`https://${hostname}:9001`, {
+    //         agent
+    //     });
+    //     var msg = await new Promise((resolve) => {
+    //         req.once("error", err => {
+    //             resolve(String(err));
+    //         });
+    //     });
+    //     assert.strictEqual(msg, `Error: connect ECONNREFUSED ${addr}:9000`);
+    // });
 });

@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        "target": "es2015",
+        "target": "ESNext",
         "preserveConstEnums": true,
         "rootDir": "src/",
         "outDir": "dist/",
