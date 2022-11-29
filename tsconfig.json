@@ -13,7 +13,8 @@
         "pretty": true,
         "removeComments": true,
         "sourceMap": true,
-        "noImplicitThis": true
+        "noImplicitThis": true,
+        "strict": true
     },
     "include": [
         "./src/*.ts"

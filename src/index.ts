@@ -19,7 +19,7 @@ const MIN_TTL_SEC = 10;
 
 const DEFAULT_TTL = MIN_TTL_SEC * 1000;
 
-const hostsThrottle = useThrottle("dnsLookup:loadHostsConfig", DEFAULT_TTL);
+const hostsThrottle = useThrottle("dnsLookup:loadHostsConfig", DEFAULT_TTL) as any as (p: any) => Promise<CacheData>;
 const _createConnection = Symbol("_createConnection");
 const Cache: CacheData = {};
 
@@ -39,7 +39,6 @@ function timestamp() {
 
 const IPV4 = 4 as 4;
 const IPV6 = 6 as 6;
-
 
 async function loadHostsConfig(file: string = ""): Promise<CacheData> {
     if (!file) {
@@ -142,7 +141,7 @@ export function lookup(
         }
     }
 
-    let query: Promise<AddressInfo[]>;
+    let query!: Promise<AddressInfo[]>;//  | undefined;
 
     // If local cache contains records of the target hostname, try to retrieve
     // them and prevent network query.
@@ -164,14 +163,14 @@ export function lookup(
     if (!query) {
         const tag = `dnsLookup:${hostname}:${family}:${all}`;
 
-        query = useThrottle(tag, DEFAULT_TTL)(async () => {
+        query = useThrottle<AddressInfo[], any>(tag, DEFAULT_TTL)(async (): Promise<AddressInfo[]> => {
             if (!HostsConfig) {
                 HostsConfig = await hostsThrottle(loadHostsConfig);
             }
 
             let result: AddressInfoDetail[] = HostsConfig[hostname] || [];
-            let err4: NodeJS.ErrnoException;
-            let err6: NodeJS.ErrnoException;
+            let err4: NodeJS.ErrnoException | undefined;
+            let err6: NodeJS.ErrnoException | undefined;
 
             let v4updated = false;
             async function updateV4() {
@@ -193,7 +192,7 @@ export function lookup(
                         Cache[hostname] = v4;
                     }
                 } catch (e) {
-                    err4 = e;
+                    err4 = e as NodeJS.ErrnoException;
                 }
             }
 
@@ -217,8 +216,8 @@ export function lookup(
                         Cache[hostname] = v6;
                     }
                 } catch (e) {
-                    if (e.code === "ENODATA" &&
-                        e.syscall === "queryAaaa" &&
+                    if ((e as any).code === "ENODATA" &&
+                        (e as any).syscall === "queryAaaa" &&
                         family === 6
                     ) {
                         try {
@@ -232,10 +231,10 @@ export function lookup(
                             cacheSlot.push(...v6);
                             Cache[hostname] = cacheSlot;
                         } catch (_e) {
-                            err6 = e;
+                            err6 = e as NodeJS.ErrnoException;
                         }
                     } else {
-                        err6 = e;
+                        err6 = e as NodeJS.ErrnoException;
                     }
                 }
             }
@@ -303,12 +302,12 @@ export function lookup(
                             null,
                             0
                         );
-
-                    callback(
-                        null,
-                        addresse.address,
-                        family
-                    );
+                    else
+                        callback(
+                            null,
+                            addresse.address,
+                            family
+                        );
                 } else {
                     callback(null, addresses[0].address, addresses[0].family);
                 }
@@ -345,10 +344,10 @@ export function install<T extends HttpAgent | HttpsAgent>(
 
     if (typeof agent.createConnection === "function") {
         if (!(_createConnection in agent)) {
-            agent[_createConnection] = agent.createConnection;
+            (agent as any)[_createConnection] = agent.createConnection;
             agent.createConnection = function (options, callback) {
                 tryAttach(options);
-                return agent[_createConnection](options, callback);
+                return (agent as any)[_createConnection](options, callback);
             };
         }
 

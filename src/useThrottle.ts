@@ -1,4 +1,5 @@
 // https://github.dev/hyurl/utils/blob/master/src/timestamp.ts
+// @ts-ignore  detect global setImmediate
 if (typeof setImmediate === "undefined") {
     // compatible with browsers
     var setImmediate = (cb: () => void) => setTimeout(cb, 0);
@@ -20,7 +21,7 @@ export default useThrottle;
  * `interval` only once, any later calls on the same `resource` will return the
  * initial throttle function.
  */
-function useThrottle(resource: any, interval: number, backgroundUpdate = false) {
+function useThrottle<RET, ARGS extends any[]>(resource: any, interval: number, backgroundUpdate = false): (handle: (...args: ARGS) => RET | Promise<RET>, ...args: ARGS) => Promise<RET> {
     if (interval < 1) {
         throw new RangeError(
             "The 'interval' time for throttle must not be smaller than 1"
@@ -52,7 +53,7 @@ function useThrottle(resource: any, interval: number, backgroundUpdate = false) 
         );
     }
 
-    return task.func;
+    return task.func as (handle: (...args: any) => any | Promise<any>, ...args: any) => Promise<any>;
 }
 
 namespace useThrottle {
@@ -64,12 +65,9 @@ namespace useThrottle {
 type ThrottleTask = {
     interval: number;
     lastActive: number;
-    cache: { value: any, error: any; };
+    cache?: { value: any, error: any; };
     queue: Set<{ resolve: (value: any) => void, reject: (err: any) => void; }>;
-    func: <T, A extends any[]>(
-        handle: (...args: A) => T | Promise<T>,
-        ...args: A
-    ) => Promise<T>;
+    func?: <RET, ARGS extends any[]>(handle: (...args: ARGS) => RET | Promise<RET>, ...args: ARGS) => Promise<RET>;
 };
 
 function createThrottleTask(
@@ -84,11 +82,7 @@ function createThrottleTask(
         func: void 0
     };
 
-    async function throttle<T, A extends any[]>(
-        this: ThrottleTask,
-        handle: (...args: A) => T | Promise<T>,
-        ...args: A
-    ): Promise<T> {
+    async function throttle<RET, ARGS extends any[]>(this: ThrottleTask, handle: (...args: ARGS) => RET | Promise<RET>, ...args: ARGS): Promise<RET> {
         let now = Date.now();
 
         if ((now - this.lastActive) >= interval) {
@@ -104,19 +98,19 @@ function createThrottleTask(
                 if (this.cache.error)
                     throw this.cache.error;
                 else
-                    return this.cache.value as T;
+                    return this.cache.value as RET;
             } else {
                 // Clear cache before dispatching the new job.
-                this.cache = void 0;
+                this.cache = undefined;
 
-                let result: T;
+                let result: RET;
                 let error: any;
 
                 try {
                     result = await handle(...args);
                     this.cache = { value: result, error: null };
                 } catch (err) {
-                    this.cache = { value: void 0, error: error = err };
+                    this.cache = { value: undefined, error: error = err };
                 }
 
                 // Resolve or reject subsequent jobs once the result is ready,
@@ -134,20 +128,20 @@ function createThrottleTask(
                 if (error)
                     throw error;
                 else
-                    return result;
+                    return result! as RET;
             }
         } else if (this.cache) {
             if (this.cache.error)
                 throw this.cache.error;
             else
-                return this.cache.value as T;
+                return this.cache.value as RET;
         } else {
-            return new Promise<T>((resolve, reject) => {
+            return new Promise<RET>((resolve, reject) => {
                 this.queue.add({ resolve, reject });
             });
         }
     }
 
-    task.func = throttle.bind(task);
+    task.func = throttle.bind(task) as <RET, ARGS extends any[]>(handle: (...args: ARGS) => RET | Promise<RET>, ...args: ARGS) => Promise<RET>;;
     return task;
 }

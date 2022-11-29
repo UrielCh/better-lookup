@@ -9,7 +9,8 @@ import * as assert from "assert";
 
 const dnsLookup = dnsPromises.lookup;
 // github resolve with multiple Ips
-const hostname = "github.com";
+// const hostname = "github.com";
+const hostname = "free.fr";
 // const hostname = "ssh.cluster023.hosting.ovh.net";
 let hostnameIPv4 = "";
 
@@ -33,18 +34,26 @@ async function dnsLookup6(hostname: string, ipv4: string) {
     return ipv6;
 }
 
+
 describe("lookup()", () => {
     it("should lookup the hostname and return a promise of a string", async () => {
         let addr = await lookup(hostname);
         let _addr = (await dnsLookup(hostname)).address;
+
+        // addr = addr.replace(/\d+$/, '')
+        // _addr = _addr.replace(/\d+$/, '')
+        //console.log('addr:', addr, '_addr', _addr);
         assert.strictEqual(addr, _addr);
 
-        let addr2 = await lookup("localhost");
-        let _addr2 = (await dnsLookup("localhost")).address;
+        let addr2 = await lookup("localhost", 4);
+        let _addr2 = (await dnsLookup("localhost", 4)).address;
+
+        //console.log('addr2:', addr2, '_addr2', _addr2);
         assert.strictEqual(addr2, _addr2);
 
-        let addr3 = await lookup("127.0.0.1");
-        let _addr3 = (await dnsLookup("127.0.0.1")).address;
+        let addr3 = await lookup("127.0.0.1", 4);
+        let _addr3 = (await dnsLookup("127.0.0.1", 4)).address;
+        //console.log('addr3:', addr3, '_addr3', _addr3);
         assert.strictEqual(addr3, _addr3);
     });
 
