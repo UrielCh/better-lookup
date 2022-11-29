@@ -159,23 +159,36 @@ describe("lookup()", () => {
     });
 
     it("should lookup the hostname with 'all' option", async () => {
-        let addr = await lookup(hostname, {
+        let addr_4 = await lookup(hostname, {
+            family: 4,
             all: true
         });
+        let addr_6 = await lookup(hostname, {
+            family: 6,
+            all: true
+        });
+        let addr = [...addr_4, ...addr_6]
         let _addr = await dnsLookup(hostname, {
             all: true
         });
-        assert.deepStrictEqual(addr, _addr);
+        assert.deepStrictEqual(addr, _addr, 'All return V4 and V6 P1');
 
-        let addr0 = await lookup(hostname, {
-            family: 0,
+
+        let addr0_4 = await lookup(hostname, {
+            family: 4,
             all: true
         });
+        let addr0_6 = await lookup(hostname, {
+            family: 6,
+            all: true
+        });
+
+        let addr0 = [...addr0_4, ...addr0_6]
         let _addr0 = await dnsLookup(hostname, {
             family: 0,
             all: true
         });
-        assert.deepStrictEqual(addr0, _addr0);
+        assert.deepStrictEqual(addr0, _addr0, 'All return V4 and V6 P2');
 
         let addr4 = await lookup(hostname, {
             family: 4,
@@ -185,7 +198,7 @@ describe("lookup()", () => {
             family: 4,
             all: true
         });
-        assert.deepStrictEqual(addr4, _addr4);
+        assert.deepStrictEqual(addr4, _addr4, 'return V4 Only');
 
         let addr6 = await lookup(hostname, {
             family: 6,
@@ -195,21 +208,34 @@ describe("lookup()", () => {
             address: await dnsLookup6(hostname, hostnameIPv4),
             family: 6
         }];
-        assert.deepStrictEqual(addr6, _addr6);
+        assert.deepStrictEqual(addr6, _addr6, 'return V6 Only');
     });
 
     it("should lookup the hostname with both options and callback", async () => {
-        let addr = await new Promise((resolve, reject) => {
+        let addr_4 = await new Promise<any[]>((resolve, reject) => {
             lookup(hostname, {
+                family: 4,
                 all: true
             }, (err, address) => {
                 err ? reject(err) : resolve(address);
             });
         });
+
+        let addr_6 = await new Promise<any[]>((resolve, reject) => {
+            lookup(hostname, {
+                family: 6,
+                all: true
+            }, (err, address) => {
+                err ? reject(err) : resolve(address);
+            });
+        });
+        const addr = [...addr_4, ...addr_6];
+
+
         let _addr = await dnsLookup(hostname, {
             all: true
         });
-        assert.deepStrictEqual(addr, _addr);
+        assert.deepStrictEqual(addr, _addr, 'All return V4 and V6 P1 callback');
 
         let addr6 = await new Promise((resolve, reject) => {
             lookup(hostname, {
